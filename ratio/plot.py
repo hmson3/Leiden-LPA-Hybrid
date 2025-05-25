@@ -1,59 +1,78 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
+import os, re
 
-# 📥 CSV 불러오기
-summary_df = pd.read_csv("results/summary_ratio.csv")
+# ───────────────── CSV 로드 & 숫자 추출 ──────────────────────────────
+df = pd.read_csv("results/summary_ratio.csv")
 
-# ✅ 숫자형 값 추출
-def extract_mean(val):
-    return float(val.split(" ")[0])
+def extract_mean(s: str) -> float:
+    return float(re.match(r"([0-9.]+)", s).group(1))
 
-summary_df["Time"] = summary_df["Time (s)"].apply(extract_mean)
-summary_df["Mod"] = summary_df["Modularity"].apply(extract_mean)
-summary_df["NMI"] = summary_df["NMI"].apply(extract_mean)
+df["Time"] = df["Time (s)"].apply(extract_mean)
+df["Mod"]  = df["Modularity"].apply(extract_mean)
+df["NMI"]  = df["NMI"].apply(extract_mean)
 
-# 📁 디렉토리 준비
+# ───────────────── 디렉터리 준비 ────────────────────────────────────
 os.makedirs("graphs", exist_ok=True)
 
-# 📈 개별 그래프 저장
-metrics = [("Time", "Time (s)", "orange"),
-           ("Mod", "Modularity", "blue"),
-           ("NMI", "NMI", "green")]
+LABEL_SIZE = 20     # 축 라벨 글꼴
+PADDING    = 0.10     # 여유 비율 (5%)
+X_TICKS  = [i/10 for i in range(0,11,2)] 
 
-for graph in summary_df["Graph"].unique():
-    graph_df = summary_df[summary_df["Graph"] == graph]
-    graph_dir = os.path.join("graphs", graph)
-    os.makedirs(graph_dir, exist_ok=True)
 
-    for col, label, color in metrics:
-        plt.figure(figsize=(8, 5))
-        sns.lineplot(data=graph_df, x="Core Ratio", y=col, marker="o", color=color)
-        plt.title(f"{label} vs Core Ratio\n({graph})")
-        plt.xlabel("Core Ratio")
-        plt.ylabel(label)
-        plt.ylim(0, 1 if col != "Time" else None)
+metrics = [
+    ("Time", "Running time (sec)"),
+    ("Mod",  "Modularity"),
+    ("NMI",  "NMI"),
+]
+
+# ───────────────── 그래프별(각 Graph) 저장 ───────────────────────────
+for g in df["Graph"].unique():
+    sub = df[df["Graph"] == g]
+    g_dir = f"graphs/{g}"; os.makedirs(g_dir, exist_ok=True)
+
+    for col, ylab in metrics:
+        ymin, ymax = sub[col].min(), sub[col].max()
+        if ymin == ymax:                      # 값이 모두 같을 때
+            ymin = 0
+        pad = (ymax - ymin) * PADDING
+        ymin, ymax = ymin - pad, ymax + pad
+
+        ax = sns.lineplot(
+            data=sub, x="Core Ratio", y=col,
+            marker="o", color="black"
+        )
+        ax.set_title("")
+        ax.set_xlabel("Core Ratio", fontsize=LABEL_SIZE)
+        ax.set_ylabel(ylab, fontsize=LABEL_SIZE)
+        ax.set_xticks(X_TICKS)
+        ax.tick_params(axis="x", labelsize=20)
+        ax.tick_params(axis="y", labelsize=20)
+        ax.set_ylim(ymin, ymax)
         plt.tight_layout()
-        
-        file_path = os.path.join(graph_dir, f"{label.replace(' ', '_').lower()}.png")
-        plt.savefig(file_path)
-        plt.close()
-        print(f"✅ Saved: {file_path}")
 
-# 📊 전체 종합 그래프 3종
-for col, label, color in metrics:
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(data=summary_df, x="Core Ratio", y=col, hue="Graph", marker="o")
-    plt.title(f"{label} vs Core Ratio (All Graphs)")
-    plt.xlabel("Core Ratio")
-    plt.ylabel(label)
-    if col != "Time":
-        plt.ylim(0, 1)
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.savefig(f"{g_dir}/{col.lower()}.png")
+        plt.close()
+        print("✅ saved:", f"{g_dir}/{col.lower()}.png")
+
+# ───────────────── 전체(overall) 그래프 ─────────────────────────────
+for col, ylab in metrics:
+    ymin, ymax = df[col].min(), df[col].max()
+    pad = (ymax - ymin) * PADDING
+    ymin, ymax = ymin - pad, ymax + pad
+
+    ax = sns.lineplot(
+        data=df, x="Core Ratio", y=col,
+        hue="Graph", marker="o"
+    )
+    ax.set_title(f"{col} vs Core Ratio (All Graphs)")
+    ax.set_xlabel("Core Ratio", fontsize=LABEL_SIZE)
+    ax.set_ylabel(ylab, fontsize=LABEL_SIZE)
+    ax.set_ylim(ymin, ymax)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
     plt.tight_layout()
 
-    file_path = f"graphs/overall_{label.replace(' ', '_').lower()}.png"
-    plt.savefig(file_path)
-    plt.close()
-    print(f"📊 Saved overall: {file_path}")
+    fname = f"graphs/overall_{col.lower()}.png"
+    plt.savefig(fname); plt.close()
+    print("📊 saved overall:", fname)

@@ -40,11 +40,11 @@ def save_bar(pivot, ylabel, ylim, colors, fname):
     )
     if ylim:
         ax.set_ylim(*ylim)
-    ax.set_ylabel(ylabel, fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=20)
     ax.set_title("")
     ax.set_xlabel("")
-    ax.tick_params(axis="x", labelsize=9)
-    ax.tick_params(axis="y", labelsize=9)
+    ax.tick_params(axis="x", labelsize=15)
+    ax.tick_params(axis="y", labelsize=15)
     ax.legend(loc="upper right")
     plt.tight_layout()
     plt.savefig(f"{out_dir}/{fname}", dpi=300)
@@ -64,11 +64,11 @@ for scheme, palette in PALETTES.items():
              f"time_small_{scheme}.png")
 
     # Modularity
-    save_bar(pivot_mod, "Modularity", None, palette,
+    save_bar(pivot_mod, "Modularity", (0,1), palette,
              f"modularity_{scheme}.png")
 
     # NMI
-    save_bar(pivot_nmi, "NMI", None, palette,
+    save_bar(pivot_nmi, "NMI", (0,1), palette,
              f"nmi_{scheme}.png")
 
 print("✓ 8 graph SAVED!")
