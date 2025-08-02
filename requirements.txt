@@ -3,3 +3,5 @@ python-igraph
 leidenalg
 scikit-learn
 cdlib
+wget
+psutil
