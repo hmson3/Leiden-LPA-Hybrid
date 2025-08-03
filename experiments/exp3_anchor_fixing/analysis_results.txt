@@ -1,0 +1,71 @@
+3-Way 앵커 전략 비교 실험 분석
+==================================================
+
+1. 전략별 전체 평균 성능:
+------------------------------
+                      ami         runtime         lpa_iterations         modularity        
+                     mean     std    mean     std           mean     std       mean     std
+anchor_strategy                                                                            
+Dynamic_Iterative  0.3867  0.1549  0.5497  0.9057         4.2333  0.7449     0.6933  0.2025
+Fixed_Iterative    0.3772  0.1255  0.4994  0.8172         2.5167  0.5365     0.6958  0.1831
+Fixed_Single       0.3770  0.1256  0.5297  0.8807         1.0000  0.0000     0.6949  0.1826
+
+2. 데이터셋별 최적 전략 (AMI 기준):
+------------------------------
+karate:
+  최적: Dynamic_Iterative (AMI: 0.547)
+  전체: {'Dynamic_Iterative': np.float64(0.5468925903996992), 'Fixed_Iterative': np.float64(0.5288861593757244), 'Fixed_Single': np.float64(0.5288861593757244)}
+
+cora:
+  최적: Dynamic_Iterative (AMI: 0.457)
+  전체: {'Dynamic_Iterative': np.float64(0.45690347753626687), 'Fixed_Iterative': np.float64(0.4454539415666861), 'Fixed_Single': np.float64(0.44545327499747334)}
+
+citeseer:
+  최적: Dynamic_Iterative (AMI: 0.329)
+  전체: {'Dynamic_Iterative': np.float64(0.329190576126743), 'Fixed_Iterative': np.float64(0.3224787624619983), 'Fixed_Single': np.float64(0.3218327270501399)}
+
+pubmed:
+  최적: Dynamic_Iterative (AMI: 0.214)
+  전체: {'Dynamic_Iterative': np.float64(0.21364728446653555), 'Fixed_Iterative': np.float64(0.21196826056499343), 'Fixed_Single': np.float64(0.21196782258941096)}
+
+3. Core Ratio별 최적 전략:
+------------------------------
+Core Ratio 0.4:
+  최적: Dynamic_Iterative
+  점수: {'Dynamic_Iterative': np.float64(0.41495814042524104), 'Fixed_Iterative': np.float64(0.38235901939802924), 'Fixed_Single': np.float64(0.3821587130480504)}
+
+Core Ratio 0.5:
+  최적: Dynamic_Iterative
+  점수: {'Dynamic_Iterative': np.float64(0.4148724633231943), 'Fixed_Iterative': np.float64(0.3849017858490839), 'Fixed_Single': np.float64(0.3846520408401525)}
+
+Core Ratio 0.6:
+  최적: Fixed_Iterative
+  점수: {'Dynamic_Iterative': np.float64(0.33014484264849814), 'Fixed_Iterative': np.float64(0.3643295377299385), 'Fixed_Single': np.float64(0.36429423412135853)}
+
+4. 수렴 분석:
+------------------------------
+Fixed_Single:
+  평균 반복: 1.0회
+  최대 반복: 1회
+  수렴률: 100.0%
+
+Fixed_Iterative:
+  평균 반복: 2.5회
+  최대 반복: 4회
+  수렴률: 100.0%
+
+Dynamic_Iterative:
+  평균 반복: 4.2회
+  최대 반복: 7회
+  수렴률: 100.0%
+
+5. 주요 발견사항:
+------------------------------
+- 전체 평균 품질 최고: Dynamic_Iterative
+- 전체 평균 속도 최고: Fixed_Iterative
+- 소규모 그래프 선호 전략: Dynamic_Iterative
+- 중간 규모 그래프 선호 전략: Dynamic_Iterative
+- 대규모 그래프 선호 전략: Dynamic_Iterative
+- 낮은 Core Ratio(0.4) 최적: Dynamic_Iterative
+- 높은 Core Ratio(0.6) 최적: Fixed_Iterative
+- 반복 전파가 품질 향상: +0.005 AMI

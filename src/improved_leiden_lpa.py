@@ -1,8 +1,7 @@
 """
-개선된 Leiden-LPA 하이브리드 커뮤니티 탐지 알고리즘
-- 다양한 중심성 지표 지원
-- 앵커 고정/비고정 옵션
-- 더 나은 에러 핸들링
+개선된 Leiden-LPA 하이브리드 커뮤니티 탐지 알고리즘 v2
+- 3가지 앵커 전략 지원: Fixed_Single, Fixed_Iterative, Dynamic_Iterative
+- 실험 3을 위한 확장 버전
 """
 import networkx as nx
 import igraph as ig
@@ -15,13 +14,13 @@ from centrality import compute_centrality, get_top_nodes
 
 class LeidenLPAHybrid:
     """
-    Leiden-LPA 하이브리드 알고리즘 클래스
+    Leiden-LPA 하이브리드 알고리즘 v2 - 3가지 앵커 전략 지원
     """
     
     def __init__(self, 
                  core_ratio: float = 0.4,
                  centrality_method: str = 'pagerank',
-                 anchor_fixed: bool = True,
+                 anchor_strategy: str = 'fixed_single',  # 새로운 파라미터!
                  max_lpa_iterations: int = 10,
                  seed: Optional[int] = None):
         """
@@ -31,8 +30,8 @@ class LeidenLPAHybrid:
             핵심 노드 비율 (0.0 ~ 1.0)
         centrality_method : str
             중심성 지표 ('pagerank', 'degree', 'eigenvector', etc.)
-        anchor_fixed : bool
-            앵커 노드 고정 여부 (True: 고정, False: 업데이트 허용)
+        anchor_strategy : str
+            앵커 전략 ('fixed_single', 'fixed_iterative', 'dynamic_iterative')
         max_lpa_iterations : int
             LPA 최대 반복 횟수
         seed : int, optional
@@ -40,9 +39,14 @@ class LeidenLPAHybrid:
         """
         self.core_ratio = core_ratio
         self.centrality_method = centrality_method
-        self.anchor_fixed = anchor_fixed
+        self.anchor_strategy = anchor_strategy
         self.max_lpa_iterations = max_lpa_iterations
         self.seed = seed
+        
+        # 앵커 전략 검증
+        valid_strategies = ['fixed_single', 'fixed_iterative', 'dynamic_iterative']
+        if anchor_strategy not in valid_strategies:
+            raise ValueError(f"anchor_strategy must be one of {valid_strategies}")
         
         # 실행 통계
         self.stats = {
@@ -52,7 +56,8 @@ class LeidenLPAHybrid:
             'total_time': 0.0,
             'core_nodes_count': 0,
             'periphery_nodes_count': 0,
-            'lpa_iterations': 0
+            'lpa_iterations': 0,
+            'anchor_strategy': anchor_strategy
         }
     
     def fit_predict(self, G_nx: nx.Graph) -> Dict[str, int]:
@@ -195,24 +200,24 @@ class LeidenLPAHybrid:
             else:
                 labels[node] = None  # 아직 할당되지 않음
         
-        # 4. 주변 노드에 라벨 전파
+        # 4. 앵커 전략에 따른 라벨 전파
         lpa_start = time.time()
         
-        if self.anchor_fixed:
-            # 앵커 고정: 한 번만 전파
-            self._propagate_labels_fixed(G_nx, labels, periphery_nodes)
-        else:
-            # 앵커 비고정: 반복적 전파
-            self._propagate_labels_dynamic(G_nx, labels, core_nodes, periphery_nodes)
+        if self.anchor_strategy == 'fixed_single':
+            self._propagate_fixed_single(G_nx, labels, periphery_nodes)
+        elif self.anchor_strategy == 'fixed_iterative':
+            self._propagate_fixed_iterative(G_nx, labels, periphery_nodes)
+        elif self.anchor_strategy == 'dynamic_iterative':
+            self._propagate_dynamic_iterative(G_nx, labels, core_nodes, periphery_nodes)
         
         self.stats['lpa_time'] = time.time() - lpa_start
         labels = self._clean_labels(labels)
         
         return labels
     
-    def _propagate_labels_fixed(self, G_nx: nx.Graph, labels: Dict[str, int], 
-                            periphery_nodes: List[str]):
-        """앵커 고정 라벨 전파 - None 값 처리 수정"""
+    def _propagate_fixed_single(self, G_nx: nx.Graph, labels: Dict[str, int], 
+                               periphery_nodes: List[str]):
+        """전략 A: 앵커 고정 + 1회 전파"""
         for v in periphery_nodes:
             labeled_neighbors = [labels[n] for n in G_nx.neighbors(v) 
                             if labels[n] is not None]
@@ -221,7 +226,6 @@ class LeidenLPAHybrid:
                 labels[v] = most_common
             else:
                 # 라벨된 이웃이 없으면 새로운 커뮤니티 생성
-                # None이 아닌 값들만 고려해서 최대값 찾기
                 existing_labels = [l for l in labels.values() if l is not None]
                 if existing_labels:
                     max_label = max(existing_labels)
@@ -230,14 +234,14 @@ class LeidenLPAHybrid:
                 labels[v] = max_label + 1
         
         self.stats['lpa_iterations'] = 1
-
-    def _propagate_labels_dynamic(self, G_nx: nx.Graph, labels: Dict[str, int],
-                                core_nodes: List[str], periphery_nodes: List[str]):
-        """앵커 비고정 반복적 라벨 전파 - None 값 처리 수정"""
+    
+    def _propagate_fixed_iterative(self, G_nx: nx.Graph, labels: Dict[str, int],
+                                  periphery_nodes: List[str]):
+        """전략 B: 앵커 고정 + 반복 전파 (새로 구현!)"""
         for iteration in range(self.max_lpa_iterations):
             updated = False
             
-            # 주변 노드 업데이트
+            # 주변 노드만 업데이트 (핵심 노드는 절대 변경 안함!)
             for v in periphery_nodes:
                 neighbor_labels = [labels[n] for n in G_nx.neighbors(v) 
                                 if labels[n] is not None]
@@ -247,7 +251,7 @@ class LeidenLPAHybrid:
                         labels[v] = most_common
                         updated = True
                 elif labels[v] is None:
-                    # 새로운 커뮤니티 생성 - None 값 안전 처리
+                    # 새로운 커뮤니티 생성
                     existing_labels = [l for l in labels.values() if l is not None]
                     if existing_labels:
                         max_label = max(existing_labels)
@@ -256,7 +260,36 @@ class LeidenLPAHybrid:
                     labels[v] = max_label + 1
                     updated = True
             
-            # 핵심 노드도 업데이트 (선택적)
+            if not updated:  # 수렴하면 조기 종료
+                break
+        
+        self.stats['lpa_iterations'] = iteration + 1
+    
+    def _propagate_dynamic_iterative(self, G_nx: nx.Graph, labels: Dict[str, int],
+                                    core_nodes: List[str], periphery_nodes: List[str]):
+        """전략 C: 앵커 비고정 + 반복 전파"""
+        for iteration in range(self.max_lpa_iterations):
+            updated = False
+            
+            # 1. 주변 노드 업데이트
+            for v in periphery_nodes:
+                neighbor_labels = [labels[n] for n in G_nx.neighbors(v) 
+                                if labels[n] is not None]
+                if neighbor_labels:
+                    most_common = Counter(neighbor_labels).most_common(1)[0][0]
+                    if labels[v] != most_common:
+                        labels[v] = most_common
+                        updated = True
+                elif labels[v] is None:
+                    existing_labels = [l for l in labels.values() if l is not None]
+                    if existing_labels:
+                        max_label = max(existing_labels)
+                    else:
+                        max_label = -1
+                    labels[v] = max_label + 1
+                    updated = True
+            
+            # 2. 핵심 노드도 업데이트! (기존과 동일)
             for v in core_nodes:
                 neighbor_labels = [labels[n] for n in G_nx.neighbors(v) 
                                 if labels[n] is not None]
@@ -270,8 +303,7 @@ class LeidenLPAHybrid:
                 break
         
         self.stats['lpa_iterations'] = iteration + 1
-
-    # 추가로 라벨 후처리 함수
+    
     def _clean_labels(self, labels: Dict[str, int]) -> Dict[str, int]:
         """None 값 제거 및 라벨 정리"""
         # None 값이 남아있으면 0으로 대체
@@ -299,74 +331,57 @@ class LeidenLPAHybrid:
         return {
             'core_ratio': self.core_ratio,
             'centrality_method': self.centrality_method,
-            'anchor_fixed': self.anchor_fixed,
+            'anchor_strategy': self.anchor_strategy,
             'max_lpa_iterations': self.max_lpa_iterations,
             'seed': self.seed
         }
 
 # 편의 함수들
 def leiden_lpa_hybrid(G_nx: nx.Graph, 
-                     core_ratio: float = 0.4,
-                     centrality_method: str = 'pagerank',
-                     anchor_fixed: bool = True,
-                     seed: Optional[int] = None) -> Dict[str, int]:
+                         core_ratio: float = 0.4,
+                         centrality_method: str = 'pagerank',
+                         anchor_strategy: str = 'fixed_single',
+                         seed: Optional[int] = None) -> Dict[str, int]:
     """
-    간단한 인터페이스 함수 (기존 호환성 유지)
+    3가지 앵커 전략 지원 인터페이스 함수
     """
     alg = LeidenLPAHybrid(
         core_ratio=core_ratio,
         centrality_method=centrality_method,
-        anchor_fixed=anchor_fixed,
+        anchor_strategy=anchor_strategy,
         seed=seed
     )
     return alg.fit_predict(G_nx)
 
-def run_baseline_comparison(G_nx: nx.Graph, 
-                          seed: Optional[int] = None) -> Dict[str, Dict]:
+def run_3way_comparison(G_nx: nx.Graph, 
+                       core_ratio: float = 0.4,
+                       seed: Optional[int] = None) -> Dict[str, Dict]:
     """
-    기준선 알고리즘들과 비교 실행
+    3가지 앵커 전략 비교 실행
     
     Returns:
     --------
     results : dict
-        각 알고리즘별 결과와 실행 시간
+        각 전략별 결과와 실행 시간
     """
+    strategies = ['fixed_single', 'fixed_iterative', 'dynamic_iterative']
     results = {}
     
-    # Pure LPA
-    alg_lpa = LeidenLPAHybrid(core_ratio=0.0, seed=seed)
-    start_time = time.time()
-    labels_lpa = alg_lpa.fit_predict(G_nx)
-    lpa_time = time.time() - start_time
-    
-    results['Pure_LPA'] = {
-        'labels': labels_lpa,
-        'runtime': lpa_time,
-        'stats': alg_lpa.get_stats()
-    }
-    
-    # Pure Leiden
-    alg_leiden = LeidenLPAHybrid(core_ratio=1.0, seed=seed)
-    start_time = time.time()
-    labels_leiden = alg_leiden.fit_predict(G_nx)
-    leiden_time = time.time() - start_time
-    
-    results['Pure_Leiden'] = {
-        'labels': labels_leiden,
-        'runtime': leiden_time,
-        'stats': alg_leiden.get_stats()
-    }
-    
-    # Hybrid (default)
-    alg_hybrid = LeidenLPAHybrid(core_ratio=0.4, seed=seed)
-    start_time = time.time()
-    labels_hybrid = alg_hybrid.fit_predict(G_nx)
-    hybrid_time = time.time() - start_time
-    
-    results['Leiden_LPA_Hybrid'] = {
-        'labels': labels_hybrid,
-        'runtime': hybrid_time,
-        'stats': alg_hybrid.get_stats()
-    }
+    for strategy in strategies:
+        alg = LeidenLPAHybrid(
+            core_ratio=core_ratio, 
+            anchor_strategy=strategy,
+            seed=seed
+        )
+        
+        start_time = time.time()
+        labels = alg.fit_predict(G_nx)
+        runtime = time.time() - start_time
+        
+        results[strategy] = {
+            'labels': labels,
+            'runtime': runtime,
+            'stats': alg.get_stats()
+        }
     
     return results
