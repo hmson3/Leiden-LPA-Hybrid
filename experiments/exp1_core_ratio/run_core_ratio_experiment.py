@@ -1,16 +1,17 @@
-#!/usr/bin/env python3
 """
 실험 1: Core Ratio 최적화
-다양한 core_ratio 값에서 최적 성능을 찾는 실험
+목적: 각 데이터셋에서 최적 core_ratio 값을 찾아 AMI, NMI, ARI, Accuracy 4개 지표로 종합 분석
 """
 
 import os
 import sys
+import time
 import pandas as pd
 import networkx as nx
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from pathlib import Path
-import time
 from typing import Dict, List, Tuple, Any
 import warnings
 warnings.filterwarnings('ignore')
@@ -27,16 +28,20 @@ class CoreRatioExperiment:
     """Core Ratio 최적화 실험 클래스"""
     
     def __init__(self):
-        self.project_root = Path(__file__).parent.parent.parent
+        self.project_root = Path(__file__).parent.parent.parent  # experiments/exp1_core_ratio에서 3단계 위로
         self.data_dir = self.project_root / 'data' / 'data' / 'processed'
         self.results_dir = self.project_root / 'results'
         self.exp_dir = self.project_root / 'experiments' / 'exp1_core_ratio'
         
         # 실험 설정
+        self.core_ratios = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         self.datasets = ['karate', 'cora', 'citeseer', 'pubmed']
-        self.core_ratios = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]  # 11개 값
-        self.centrality_method = 'pagerank'  # 실험 2 결과 기반으로 PageRank 고정
-        self.repeat_count = 5  # 반복 횟수
+        self.centrality_method = 'pagerank'  # 실험2에서 최적으로 확인된 지표
+        self.anchor_fixed = True
+        self.repeat_runs = 5  # 통계적 신뢰성을 위한 반복 실험
+        
+        # 결과 저장용
+        self.results = []
         
         self._create_directories()
     
@@ -48,7 +53,7 @@ class CoreRatioExperiment:
         (self.results_dir / 'figures').mkdir(exist_ok=True)
     
     def load_dataset(self, dataset_name: str) -> Tuple[nx.Graph, Dict[str, int], str]:
-        """데이터셋 로드 (실험 2와 동일)"""
+        """데이터셋 로드 (실험2와 동일한 방식)"""
         dataset_path = self.data_dir / dataset_name
         
         # 그래프 로드
@@ -112,17 +117,16 @@ class CoreRatioExperiment:
             size_category = 'large'
         
         return G, labels, size_category
-    
-    def run_single_experiment(self, dataset_name: str, core_ratio: float,
-                            G: nx.Graph, true_labels: Dict[str, int], 
-                            run_id: int) -> Dict[str, Any]:
-        """단일 실험 실행"""
+        
+    def run_single_experiment(self, dataset_name, core_ratio, run_id, G, true_labels):
+        """단일 실험 실행 (실험2 스타일로 수정)"""
         try:
             # 알고리즘 실행
             start_time = time.time()
             alg = LeidenLPAHybrid(
                 core_ratio=core_ratio,
                 centrality_method=self.centrality_method,
+                anchor_fixed=self.anchor_fixed,
                 seed=42 + run_id  # 재현 가능한 시드
             )
             pred_labels = alg.fit_predict(G)
@@ -160,6 +164,9 @@ class CoreRatioExperiment:
                 if np.isnan(evaluation['ground_truth_metrics']['accuracy']):
                     evaluation['ground_truth_metrics']['accuracy'] = -1.0
             
+            # 알고리즘 통계
+            stats = alg.get_stats()
+            
             # 결과 정리
             result = {
                 'dataset': dataset_name,
@@ -169,24 +176,30 @@ class CoreRatioExperiment:
                 'nodes': G.number_of_nodes(),
                 'edges': G.number_of_edges(),
                 'num_communities': evaluation['clustering_info']['num_communities'],
+                
+                # 구조적 품질 지표
                 'modularity': evaluation['structural_quality']['modularity'],
                 'conductance': evaluation['structural_quality']['conductance'],
                 'coverage': evaluation['structural_quality']['coverage'],
+                
+                # Ground truth 비교 지표 (4개 핵심 지표)
                 'nmi': evaluation['ground_truth_metrics']['nmi'],
-                'ami': evaluation['ground_truth_metrics'].get('ami', -1.0),
+                'ami': evaluation['ground_truth_metrics']['ami'],  # 주요 지표
                 'ari': evaluation['ground_truth_metrics']['ari'],
                 'accuracy': evaluation['ground_truth_metrics']['accuracy'],
-                'core_nodes_count': alg.get_stats().get('core_nodes_count', 0),
-                'periphery_nodes_count': alg.get_stats().get('periphery_nodes_count', 0),
-                'leiden_time': alg.get_stats().get('leiden_time', 0),
-                'lpa_time': alg.get_stats().get('lpa_time', 0),
-                'centrality_time': alg.get_stats().get('centrality_time', 0)
+                
+                # 알고리즘 분석 정보
+                'core_nodes_count': stats.get('core_nodes_count', 0),
+                'periphery_nodes_count': stats.get('periphery_nodes_count', 0),
+                'leiden_time': stats.get('leiden_time', 0),
+                'lpa_time': stats.get('lpa_time', 0),
+                'centrality_time': stats.get('centrality_time', 0)
             }
             
             return result
             
         except Exception as e:
-            print(f"   ❌ 오류: core_ratio={core_ratio} - {e}")
+            print(f"    ❌ 오류: core_ratio={core_ratio} - {e}")
             return None
     
     def run_dataset_experiment(self, dataset_name: str) -> List[Dict[str, Any]]:
@@ -214,9 +227,9 @@ class CoreRatioExperiment:
             ratio_results = []
             
             # 반복 실험
-            for run_id in range(self.repeat_count):
+            for run_id in range(self.repeat_runs):
                 result = self.run_single_experiment(
-                    dataset_name, core_ratio, G, true_labels, run_id
+                    dataset_name, core_ratio, run_id, G, true_labels
                 )
                 if result:
                     ratio_results.append(result)
@@ -256,7 +269,7 @@ class CoreRatioExperiment:
                 'experiment': 'core_ratio_optimization',
                 'centrality_method': self.centrality_method,
                 'core_ratios': self.core_ratios,
-                'repeat_count': self.repeat_count,
+                'repeat_count': self.repeat_runs,
                 'datasets': self.datasets,
                 'timestamp': pd.Timestamp.now().isoformat()
             }
@@ -274,7 +287,7 @@ class CoreRatioExperiment:
             return pd.DataFrame()
     
     def _save_analysis(self, results_df: pd.DataFrame):
-        """실험 결과 분석 및 저장"""
+        """실험 결과 분석 및 저장 (실험2 스타일)"""
         print(f"\n📊 결과 분석 생성 중...")
         
         # 데이터셋별 최적 core_ratio 찾기
@@ -368,16 +381,260 @@ class CoreRatioExperiment:
         insights.append("- 품질 vs 속도 트레이드오프 고려")
         
         return "\n".join(insights)
+    
+    def create_visualizations(self, df):
+        """시각화 생성"""
+        print("🎨 시각화 생성 중...")
+        
+        # 1. 4개 주요 지표 종합 비교
+        self.plot_four_metrics_comparison(df)
+        
+        # 2. 데이터셋별 상세 분석
+        self.plot_dataset_detailed_analysis(df)
+        
+        # 3. Runtime vs Quality 트레이드오프
+        self.plot_runtime_quality_tradeoff(df)
+        
+        # 4. 최적 core_ratio 요약
+        self.plot_optimal_ratios_summary(df)
+    
+    def plot_four_metrics_comparison(self, df):
+        """4개 주요 지표 종합 비교 (AMI, NMI, ARI, Accuracy)"""
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        axes = axes.flatten()
+        
+        metrics = ['ami', 'nmi', 'ari', 'accuracy']
+        titles = ['AMI (주요 지표)', 'NMI (전통적 지표)', 'ARI (클러스터 일치도)', 'Accuracy (직관적 정확도)']
+        
+        # 평균값 계산
+        df_mean = df.groupby(['dataset', 'core_ratio'])[metrics].mean().reset_index()
+        
+        for i, (metric, title) in enumerate(zip(metrics, titles)):
+            ax = axes[i]
+            
+            # 데이터셋별 라인 플롯
+            for dataset in self.datasets:
+                data = df_mean[df_mean['dataset'] == dataset]
+                ax.plot(data['core_ratio'], data[metric], 
+                       marker='o', linewidth=2, markersize=6, 
+                       label=dataset, alpha=0.8)
+            
+            ax.set_xlabel('Core Ratio')
+            ax.set_ylabel(metric.upper())
+            ax.set_title(title, fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend()
+            ax.set_xlim(-0.05, 1.05)
+        
+        plt.tight_layout()
+        plt.savefig(self.output_dir / 'four_metrics_comparison.png', dpi=300, bbox_inches='tight')
+        plt.savefig(self.output_dir / 'four_metrics_comparison.pdf', bbox_inches='tight')
+        print(f"📊 저장: four_metrics_comparison.png")
+        plt.show()
+    
+    def plot_dataset_detailed_analysis(self, df):
+        """데이터셋별 상세 분석"""
+        for dataset in self.datasets:
+            dataset_df = df[df['dataset'] == dataset]
+            
+            fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+            fig.suptitle(f'{dataset.upper()} Dataset - Core Ratio Analysis', fontsize=16, fontweight='bold')
+            
+            # 평균값 계산
+            df_mean = dataset_df.groupby('core_ratio').agg({
+                'ami': ['mean', 'std'],
+                'nmi': ['mean', 'std'], 
+                'ari': ['mean', 'std'],
+                'accuracy': ['mean', 'std'],
+                'runtime': ['mean', 'std'],
+                'modularity': ['mean', 'std']
+            }).reset_index()
+            
+            df_mean.columns = ['core_ratio'] + [f'{col[0]}_{col[1]}' for col in df_mean.columns[1:]]
+            
+            # 6개 서브플롯
+            metrics = [
+                ('ami', 'AMI (주요 지표)'),
+                ('nmi', 'NMI'), 
+                ('ari', 'ARI'),
+                ('accuracy', 'Accuracy'),
+                ('runtime', 'Runtime (초)'),
+                ('modularity', 'Modularity')
+            ]
+            
+            for i, (metric, title) in enumerate(metrics):
+                ax = axes[i//3, i%3]
+                
+                # 에러바와 함께 플롯
+                ax.errorbar(df_mean['core_ratio'], df_mean[f'{metric}_mean'], 
+                           yerr=df_mean[f'{metric}_std'], 
+                           marker='o', linewidth=2, markersize=8, 
+                           capsize=5, capthick=2, alpha=0.8)
+                
+                ax.set_xlabel('Core Ratio')
+                ax.set_ylabel(title)
+                ax.set_title(title, fontweight='bold')
+                ax.grid(True, alpha=0.3)
+                ax.set_xlim(-0.05, 1.05)
+                
+                # 최적점 표시 (AMI 기준)
+                if metric == 'ami':
+                    best_idx = df_mean[f'{metric}_mean'].idxmax()
+                    best_ratio = df_mean.loc[best_idx, 'core_ratio']
+                    best_value = df_mean.loc[best_idx, f'{metric}_mean']
+                    ax.scatter(best_ratio, best_value, color='red', s=100, zorder=5)
+                    ax.annotate(f'Best: {best_ratio:.1f}', 
+                               xy=(best_ratio, best_value),
+                               xytext=(10, 10), textcoords='offset points',
+                               bbox=dict(boxstyle='round,pad=0.3', facecolor='red', alpha=0.7),
+                               fontweight='bold', color='white')
+            
+            plt.tight_layout()
+            plt.savefig(self.output_dir / f'{dataset}_detailed_analysis.png', dpi=300, bbox_inches='tight')
+            print(f"📊 저장: {dataset}_detailed_analysis.png")
+            plt.show()
+    
+    def plot_runtime_quality_tradeoff(self, df):
+        """Runtime vs Quality 트레이드오프 분석"""
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        fig.suptitle('Runtime vs Quality Tradeoff Analysis', fontsize=16, fontweight='bold')
+        
+        # 평균값 계산
+        df_mean = df.groupby(['dataset', 'core_ratio']).agg({
+            'runtime': 'mean',
+            'ami': 'mean', 
+            'nmi': 'mean',
+            'ari': 'mean',
+            'accuracy': 'mean'
+        }).reset_index()
+        
+        metrics = ['ami', 'nmi', 'ari', 'accuracy']
+        titles = ['Runtime vs AMI', 'Runtime vs NMI', 'Runtime vs ARI', 'Runtime vs Accuracy']
+        
+        for i, (metric, title) in enumerate(zip(metrics, titles)):
+            ax = axes[i//2, i%2]
+            
+            for dataset in self.datasets:
+                data = df_mean[df_mean['dataset'] == dataset]
+                
+                # 산점도
+                scatter = ax.scatter(data['runtime'], data[metric], 
+                                   s=100, alpha=0.7, label=dataset)
+                
+                # core_ratio 값을 텍스트로 표시
+                for _, row in data.iterrows():
+                    ax.annotate(f"{row['core_ratio']:.1f}", 
+                               (row['runtime'], row[metric]),
+                               xytext=(5, 5), textcoords='offset points',
+                               fontsize=8, alpha=0.8)
+            
+            ax.set_xlabel('Runtime (초)')
+            ax.set_ylabel(metric.upper())
+            ax.set_title(title, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend()
+        
+        plt.tight_layout()
+        plt.savefig(self.output_dir / 'runtime_quality_tradeoff.png', dpi=300, bbox_inches='tight')
+        print(f"📊 저장: runtime_quality_tradeoff.png")
+        plt.show()
+    
+    def plot_optimal_ratios_summary(self, df):
+        """최적 core_ratio 요약"""
+        # 각 데이터셋별 최적 core_ratio 찾기 (AMI 기준)
+        df_mean = df.groupby(['dataset', 'core_ratio'])['ami'].mean().reset_index()
+        optimal_ratios = df_mean.loc[df_mean.groupby('dataset')['ami'].idxmax()]
+        
+        # 바 차트
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+        
+        # 1. 최적 core_ratio
+        bars1 = ax1.bar(optimal_ratios['dataset'], optimal_ratios['core_ratio'], 
+                        color=['skyblue', 'lightgreen', 'lightcoral', 'gold'], alpha=0.8)
+        ax1.set_xlabel('Dataset')
+        ax1.set_ylabel('Optimal Core Ratio')
+        ax1.set_title('Optimal Core Ratio by Dataset (AMI 기준)', fontweight='bold')
+        ax1.grid(True, alpha=0.3, axis='y')
+        
+        # 값 표시
+        for bar, ratio in zip(bars1, optimal_ratios['core_ratio']):
+            ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                    f'{ratio:.1f}', ha='center', va='bottom', fontweight='bold')
+        
+        # 2. 최적점에서의 AMI 값
+        bars2 = ax2.bar(optimal_ratios['dataset'], optimal_ratios['ami'],
+                        color=['skyblue', 'lightgreen', 'lightcoral', 'gold'], alpha=0.8)
+        ax2.set_xlabel('Dataset')
+        ax2.set_ylabel('AMI Score')
+        ax2.set_title('AMI Score at Optimal Core Ratio', fontweight='bold')
+        ax2.grid(True, alpha=0.3, axis='y')
+        
+        # 값 표시
+        for bar, ami in zip(bars2, optimal_ratios['ami']):
+            ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.005,
+                    f'{ami:.3f}', ha='center', va='bottom', fontweight='bold')
+        
+        plt.tight_layout()
+        plt.savefig(self.output_dir / 'optimal_ratios_summary.png', dpi=300, bbox_inches='tight')
+        print(f"📊 저장: optimal_ratios_summary.png")
+        plt.show()
+        
+        return optimal_ratios
+    
+    def generate_report(self, df, optimal_ratios):
+        """실험 결과 리포트 생성"""
+        report_path = self.output_dir / 'experiment_report.txt'
+        
+        with open(report_path, 'w', encoding='utf-8') as f:
+            f.write("🎯 실험 1: Core Ratio 최적화 결과 리포트\n")
+            f.write("=" * 50 + "\n\n")
+            
+            f.write("📊 실험 설정:\n")
+            f.write(f"  - 데이터셋: {', '.join(self.datasets)}\n")
+            f.write(f"  - Core Ratios: {self.core_ratios}\n")
+            f.write(f"  - 중심성 지표: {self.centrality_method}\n")
+            f.write(f"  - 반복 실험: {self.repeat_runs}회\n")
+            f.write(f"  - 총 실험 수: {len(df)}\n\n")
+            
+            f.write("🏆 최적 Core Ratio (AMI 기준):\n")
+            for _, row in optimal_ratios.iterrows():
+                f.write(f"  - {row['dataset']}: {row['core_ratio']:.1f} (AMI: {row['ami']:.4f})\n")
+            f.write("\n")
+            
+            # 데이터셋별 요약
+            for dataset in self.datasets:
+                dataset_df = df[df['dataset'] == dataset]
+                f.write(f"📈 {dataset.upper()} 분석:\n")
+                
+                # 네트워크 정보
+                nodes = dataset_df['nodes'].iloc[0]
+                edges = dataset_df['edges'].iloc[0] 
+                f.write(f"  - 노드 수: {nodes:,}, 엣지 수: {edges:,}\n")
+                
+                # 최적 core_ratio에서의 성능
+                optimal_ratio = optimal_ratios[optimal_ratios['dataset'] == dataset]['core_ratio'].iloc[0]
+                optimal_data = dataset_df[dataset_df['core_ratio'] == optimal_ratio]
+                
+                f.write(f"  - 최적 Core Ratio: {optimal_ratio:.1f}\n")
+                f.write(f"  - AMI: {optimal_data['ami'].mean():.4f} ± {optimal_data['ami'].std():.4f}\n")
+                f.write(f"  - NMI: {optimal_data['nmi'].mean():.4f} ± {optimal_data['nmi'].std():.4f}\n")
+                f.write(f"  - ARI: {optimal_data['ari'].mean():.4f} ± {optimal_data['ari'].std():.4f}\n")
+                f.write(f"  - Accuracy: {optimal_data['accuracy'].mean():.4f} ± {optimal_data['accuracy'].std():.4f}\n")
+                f.write(f"  - Runtime: {optimal_data['runtime'].mean():.4f} ± {optimal_data['runtime'].std():.4f} 초\n")
+                f.write(f"  - Modularity: {optimal_data['modularity'].mean():.4f} ± {optimal_data['modularity'].std():.4f}\n")
+                f.write("\n")
+        
+        print(f"📝 리포트 저장: {report_path}")
 
 def main():
-    """메인 실행 함수"""
+    """메인 실행 함수 (실험2 스타일)"""
     experiment = CoreRatioExperiment()
     
     print("🎯 실험 설정:")
     print(f"   데이터셋: {experiment.datasets}")
     print(f"   Core Ratios: {experiment.core_ratios}")
     print(f"   중심성 지표: {experiment.centrality_method}")
-    print(f"   반복 횟수: {experiment.repeat_count}")
+    print(f"   반복 횟수: {experiment.repeat_runs}")
     
     # 실험 실행
     results_df = experiment.run_all_experiments()
