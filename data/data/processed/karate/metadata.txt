@@ -1,0 +1,4 @@
+nodes: 34
+edges: 78
+has_labels: True
+num_classes: 2

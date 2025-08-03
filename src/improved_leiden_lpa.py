@@ -206,50 +206,60 @@ class LeidenLPAHybrid:
             self._propagate_labels_dynamic(G_nx, labels, core_nodes, periphery_nodes)
         
         self.stats['lpa_time'] = time.time() - lpa_start
+        labels = self._clean_labels(labels)
         
         return labels
     
     def _propagate_labels_fixed(self, G_nx: nx.Graph, labels: Dict[str, int], 
-                               periphery_nodes: List[str]):
-        """앵커 고정 라벨 전파"""
+                            periphery_nodes: List[str]):
+        """앵커 고정 라벨 전파 - None 값 처리 수정"""
         for v in periphery_nodes:
             labeled_neighbors = [labels[n] for n in G_nx.neighbors(v) 
-                               if labels[n] is not None]
+                            if labels[n] is not None]
             if labeled_neighbors:
                 most_common = Counter(labeled_neighbors).most_common(1)[0][0]
                 labels[v] = most_common
             else:
                 # 라벨된 이웃이 없으면 새로운 커뮤니티 생성
-                max_label = max([l for l in labels.values() if l is not None], default=-1)
+                # None이 아닌 값들만 고려해서 최대값 찾기
+                existing_labels = [l for l in labels.values() if l is not None]
+                if existing_labels:
+                    max_label = max(existing_labels)
+                else:
+                    max_label = -1
                 labels[v] = max_label + 1
         
         self.stats['lpa_iterations'] = 1
-    
+
     def _propagate_labels_dynamic(self, G_nx: nx.Graph, labels: Dict[str, int],
-                                 core_nodes: List[str], periphery_nodes: List[str]):
-        """앵커 비고정 반복적 라벨 전파"""
+                                core_nodes: List[str], periphery_nodes: List[str]):
+        """앵커 비고정 반복적 라벨 전파 - None 값 처리 수정"""
         for iteration in range(self.max_lpa_iterations):
             updated = False
             
             # 주변 노드 업데이트
             for v in periphery_nodes:
                 neighbor_labels = [labels[n] for n in G_nx.neighbors(v) 
-                                 if labels[n] is not None]
+                                if labels[n] is not None]
                 if neighbor_labels:
                     most_common = Counter(neighbor_labels).most_common(1)[0][0]
                     if labels[v] != most_common:
                         labels[v] = most_common
                         updated = True
                 elif labels[v] is None:
-                    # 새로운 커뮤니티 생성
-                    max_label = max([l for l in labels.values() if l is not None], default=-1)
+                    # 새로운 커뮤니티 생성 - None 값 안전 처리
+                    existing_labels = [l for l in labels.values() if l is not None]
+                    if existing_labels:
+                        max_label = max(existing_labels)
+                    else:
+                        max_label = -1
                     labels[v] = max_label + 1
                     updated = True
             
             # 핵심 노드도 업데이트 (선택적)
             for v in core_nodes:
                 neighbor_labels = [labels[n] for n in G_nx.neighbors(v) 
-                                 if labels[n] is not None]
+                                if labels[n] is not None]
                 if neighbor_labels:
                     most_common = Counter(neighbor_labels).most_common(1)[0][0]
                     if labels[v] != most_common:
@@ -260,6 +270,25 @@ class LeidenLPAHybrid:
                 break
         
         self.stats['lpa_iterations'] = iteration + 1
+
+    # 추가로 라벨 후처리 함수
+    def _clean_labels(self, labels: Dict[str, int]) -> Dict[str, int]:
+        """None 값 제거 및 라벨 정리"""
+        # None 값이 남아있으면 0으로 대체
+        cleaned = {}
+        for node, label in labels.items():
+            if label is None:
+                cleaned[node] = 0  # 기본값
+            else:
+                cleaned[node] = int(label)
+        
+        # 라벨 연속화 (0, 1, 2, ...)
+        unique_labels = sorted(set(cleaned.values()))
+        label_mapping = {old_label: new_label for new_label, old_label in enumerate(unique_labels)}
+        
+        final_labels = {node: label_mapping[label] for node, label in cleaned.items()}
+        
+        return final_labels
     
     def get_stats(self) -> Dict[str, Union[float, int]]:
         """실행 통계 반환"""

@@ -215,7 +215,7 @@ class CommunityEvaluator:
         return internal_edges / total_edges if total_edges > 0 else 0.0
     
     def _compute_ground_truth_metrics(self, pred_labels: Dict[str, int]) -> Dict[str, float]:
-        """Ground truth 기반 지표 계산"""
+        """Ground truth 기반 지표 계산 - AMI + NMI 둘 다 포함"""
         results = {}
         
         # 공통 노드만 추출
@@ -223,19 +223,28 @@ class CommunityEvaluator:
         
         if len(common_nodes) == 0:
             warnings.warn("No common nodes between predictions and ground truth")
-            return {'nmi': np.nan, 'ari': np.nan, 'accuracy': np.nan}
+            return {'nmi': np.nan, 'ami': np.nan, 'ari': np.nan, 'accuracy': np.nan}
         
         # 레이블 리스트 생성
         pred_list = [pred_labels[node] for node in common_nodes]
         true_list = [self.true_labels[node] for node in common_nodes]
         
-        # NMI 계산
+        # NMI 계산 (기존)
         try:
             nmi = normalized_mutual_info_score(true_list, pred_list)
             results['nmi'] = nmi
         except Exception as e:
             warnings.warn(f"NMI calculation failed: {e}")
             results['nmi'] = np.nan
+        
+        # AMI 계산 (새로 추가) ✅
+        try:
+            from sklearn.metrics import adjusted_mutual_info_score
+            ami = adjusted_mutual_info_score(true_list, pred_list)
+            results['ami'] = ami
+        except Exception as e:
+            warnings.warn(f"AMI calculation failed: {e}")
+            results['ami'] = np.nan
         
         # ARI 계산
         try:
@@ -245,7 +254,7 @@ class CommunityEvaluator:
             warnings.warn(f"ARI calculation failed: {e}")
             results['ari'] = np.nan
         
-        # 정확도 계산 (가장 빈도 높은 매칭 기준)
+        # 정확도 계산
         try:
             accuracy = self._compute_accuracy(pred_list, true_list)
             results['accuracy'] = accuracy

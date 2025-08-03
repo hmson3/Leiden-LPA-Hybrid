@@ -1,0 +1,6 @@
+nodes: 19717
+edges: 44327
+has_labels: True
+num_classes: 3
+density: 0.000228
+avg_degree: 4.50
