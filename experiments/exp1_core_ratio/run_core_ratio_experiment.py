@@ -662,6 +662,6 @@ def main():
 if __name__ == "__main__":
     success = main()
     if success:
-        print(f"\n🚀 다음 단계: 실험 3 (앵커 고정 효과) 또는 결과 분석!")
+        print(f"\n🚀 실험1 완료!")
     else:
         print(f"\n🔧 실험을 다시 확인해보세요.")

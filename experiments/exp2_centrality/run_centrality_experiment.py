@@ -407,6 +407,6 @@ def main():
 if __name__ == "__main__":
     success = main()
     if success:
-        print(f"\n🚀 다음 단계: 실험 1 (Core Ratio 최적화) 또는 결과 분석!")
+        print(f"\n🚀 실험2 완료!")
     else:
         print(f"\n🔧 데이터나 코드를 확인해보세요.")

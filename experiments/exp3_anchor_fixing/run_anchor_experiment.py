@@ -466,6 +466,6 @@ def main():
 if __name__ == "__main__":
     success = main()
     if success:
-        print(f"\n🚀 다음 단계: 실험 4 (기존 방법 비교) 또는 통합 분석!")
+        print(f"\n🚀 실험3 완료!")
     else:
         print(f"\n🔧 실험을 다시 확인해보세요.")
