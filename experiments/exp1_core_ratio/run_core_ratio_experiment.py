@@ -126,7 +126,7 @@ class CoreRatioExperiment:
             alg = LeidenLPAHybrid(
                 core_ratio=core_ratio,
                 centrality_method=self.centrality_method,
-                anchor_fixed=self.anchor_fixed,
+                anchor_strategy='fixed_iterative',
                 seed=42 + run_id  # 재현 가능한 시드
             )
             pred_labels = alg.fit_predict(G)

@@ -20,7 +20,7 @@ class LeidenLPAHybrid:
     def __init__(self, 
                  core_ratio: float = 0.4,
                  centrality_method: str = 'pagerank',
-                 anchor_strategy: str = 'fixed_single',  # 새로운 파라미터!
+                 anchor_strategy: str = 'fixed_iterative',  # 새로운 파라미터!
                  max_lpa_iterations: int = 10,
                  seed: Optional[int] = None):
         """

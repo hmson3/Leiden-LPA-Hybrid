@@ -137,7 +137,7 @@ class BaselineExperiment:
         alg = LeidenLPAHybrid(
             core_ratio=0.5,  # 실험 1 결과
             centrality_method='pagerank',  # 실험 2 결과
-            anchor_strategy='dynamic_iterative',  # 실험 3 결과 (Dynamic_Iterative)
+            anchor_strategy='fixed_iterative',  # 실험 3 결과 (Fixed_Iterative)
             seed=seed
         )
         return alg.fit_predict(G)
