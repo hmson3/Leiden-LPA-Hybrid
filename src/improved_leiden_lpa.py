@@ -1,11 +1,10 @@
 """
-개선된 Leiden-LPA 하이브리드 커뮤니티 탐지 알고리즘 v2
+개선된 Leiden-LPA 하이브리드 커뮤니티 탐지 알고리즘 v2 - Counter 최적화 버전
 - 3가지 앵커 전략 지원: Fixed_Single, Fixed_Iterative, Dynamic_Iterative
-- 실험 3을 위한 확장 버전
+- Counter 제거로 성능 최적화
 """
 import networkx as nx
 import igraph as ig
-from collections import Counter
 from leidenalg import find_partition, ModularityVertexPartition
 import time
 import warnings
@@ -99,8 +98,26 @@ class LeidenLPAHybrid:
         self.stats['total_time'] = time.time() - start_time
         return labels
     
+    def _get_most_common_label(self, neighbor_labels: List[int]) -> Optional[int]:
+        """Counter 대신 수동으로 최빈값 계산 - 최적화!"""
+        if not neighbor_labels:
+            return None
+        
+        label_counts = {}
+        max_count = 0
+        most_common_label = None
+        
+        for label in neighbor_labels:
+            count = label_counts.get(label, 0) + 1
+            label_counts[label] = count
+            if count > max_count:
+                max_count = count
+                most_common_label = label
+        
+        return most_common_label
+    
     def _run_pure_lpa(self, G_nx: nx.Graph) -> Dict[str, int]:
-        """순수 LPA 실행"""
+        """순수 LPA 실행 - Counter 제거"""
         start_time = time.time()
         
         # 초기 라벨 (각 노드 고유 라벨)
@@ -119,7 +136,7 @@ class LeidenLPAHybrid:
             for v in nodes_list:
                 neighbor_labels = [labels[n] for n in G_nx.neighbors(v)]
                 if neighbor_labels:
-                    most_common = Counter(neighbor_labels).most_common(1)[0][0]
+                    most_common = self._get_most_common_label(neighbor_labels)
                     if labels[v] != most_common:
                         labels[v] = most_common
                         updated = True
@@ -162,7 +179,10 @@ class LeidenLPAHybrid:
         centrality_start = time.time()
         centrality_scores = compute_centrality(G_nx, self.centrality_method)
         core_nodes = get_top_nodes(centrality_scores, self.core_ratio)
-        periphery_nodes = [v for v in G_nx.nodes() if v not in core_nodes]
+        
+        # 🔥 핵심 최적화: 집합 사용!
+        core_nodes_set = set(core_nodes)
+        periphery_nodes = [v for v in G_nx.nodes() if v not in core_nodes_set]
         
         self.stats['centrality_time'] = time.time() - centrality_start
         self.stats['core_nodes_count'] = len(core_nodes)
@@ -217,12 +237,12 @@ class LeidenLPAHybrid:
     
     def _propagate_fixed_single(self, G_nx: nx.Graph, labels: Dict[str, int], 
                                periphery_nodes: List[str]):
-        """전략 A: 앵커 고정 + 1회 전파"""
+        """전략 A: 앵커 고정 + 1회 전파 - Counter 제거"""
         for v in periphery_nodes:
             labeled_neighbors = [labels[n] for n in G_nx.neighbors(v) 
                             if labels[n] is not None]
             if labeled_neighbors:
-                most_common = Counter(labeled_neighbors).most_common(1)[0][0]
+                most_common = self._get_most_common_label(labeled_neighbors)
                 labels[v] = most_common
             else:
                 # 라벨된 이웃이 없으면 새로운 커뮤니티 생성
@@ -237,7 +257,7 @@ class LeidenLPAHybrid:
     
     def _propagate_fixed_iterative(self, G_nx: nx.Graph, labels: Dict[str, int],
                                   periphery_nodes: List[str]):
-        """전략 B: 앵커 고정 + 반복 전파 (새로 구현!)"""
+        """전략 B: 앵커 고정 + 반복 전파 - Counter 제거"""
         for iteration in range(self.max_lpa_iterations):
             updated = False
             
@@ -246,7 +266,7 @@ class LeidenLPAHybrid:
                 neighbor_labels = [labels[n] for n in G_nx.neighbors(v) 
                                 if labels[n] is not None]
                 if neighbor_labels:
-                    most_common = Counter(neighbor_labels).most_common(1)[0][0]
+                    most_common = self._get_most_common_label(neighbor_labels)
                     if labels[v] != most_common:
                         labels[v] = most_common
                         updated = True
@@ -267,7 +287,7 @@ class LeidenLPAHybrid:
     
     def _propagate_dynamic_iterative(self, G_nx: nx.Graph, labels: Dict[str, int],
                                     core_nodes: List[str], periphery_nodes: List[str]):
-        """전략 C: 앵커 비고정 + 반복 전파"""
+        """전략 C: 앵커 비고정 + 반복 전파 - Counter 제거"""
         for iteration in range(self.max_lpa_iterations):
             updated = False
             
@@ -276,7 +296,7 @@ class LeidenLPAHybrid:
                 neighbor_labels = [labels[n] for n in G_nx.neighbors(v) 
                                 if labels[n] is not None]
                 if neighbor_labels:
-                    most_common = Counter(neighbor_labels).most_common(1)[0][0]
+                    most_common = self._get_most_common_label(neighbor_labels)
                     if labels[v] != most_common:
                         labels[v] = most_common
                         updated = True
@@ -294,7 +314,7 @@ class LeidenLPAHybrid:
                 neighbor_labels = [labels[n] for n in G_nx.neighbors(v) 
                                 if labels[n] is not None]
                 if neighbor_labels:
-                    most_common = Counter(neighbor_labels).most_common(1)[0][0]
+                    most_common = self._get_most_common_label(neighbor_labels)
                     if labels[v] != most_common:
                         labels[v] = most_common
                         updated = True

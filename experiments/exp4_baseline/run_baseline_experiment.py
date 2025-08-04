@@ -135,8 +135,8 @@ class BaselineExperiment:
     def _run_optimal_hybrid(self, G: nx.Graph, seed: int) -> Dict[str, int]:
         """Optimal Hybrid 실행 (실험 1,2,3 결과 기반)"""
         alg = LeidenLPAHybrid(
-            core_ratio=0.5,  # 실험 1 결과
-            centrality_method='degree',  # 실험 2 결과
+            core_ratio=0.3,  # 실험 1 결과
+            centrality_method='pagerank',  # 실험 2 결과
             anchor_strategy='fixed_iterative',  # 실험 3 결과 (Fixed_Iterative)
             seed=seed
         )
