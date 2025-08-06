@@ -33,17 +33,19 @@ class CoreRatioExperiment:
         self.exp_dir = self.project_root / 'experiments' / 'exp1_core_ratio'
         
         # 실험 설정
-        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed','com-amazon', 'com-dblp', 'com-youtube']
-        self.core_ratios = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed','com-amazon']
+        self.core_ratios = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         self.centrality_method = 'pagerank'
         self.repeat_count = 1
         
-        # 데이터셋별 overlapping 여부 (사용자 수정 필요)
         self.dataset_overlapping = {
-            'karate': False,     # 수정하세요
-            'cora': False,       # 수정하세요  
-            'citeseer': False,   # 수정하세요
-            'pubmed': False       # 수정하세요
+            'karate': False,     # ← True/False로 수정
+            'cora': False,      
+            'citeseer': False,  
+            'pubmed': False,      
+            'com-dblp': True,  
+            'com-youtube': True,  
+            'com-amazon': True  
         }
         
         # 체크포인트 설정

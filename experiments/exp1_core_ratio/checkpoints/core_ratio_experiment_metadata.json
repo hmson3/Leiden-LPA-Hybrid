@@ -10,7 +10,8 @@
     0.6,
     0.7,
     0.8,
-    0.9
+    0.9,
+    1.0
   ],
   "repeat_count": 1,
   "datasets": [
@@ -18,16 +19,17 @@
     "cora",
     "citeseer",
     "pubmed",
-    "com-amazon",
-    "com-dblp",
-    "com-youtube"
+    "com-amazon"
   ],
   "dataset_overlapping": {
     "karate": false,
     "cora": false,
     "citeseer": false,
-    "pubmed": false
+    "pubmed": false,
+    "com-dblp": true,
+    "com-youtube": true,
+    "com-amazon": true
   },
   "checkpoint_interval": 1,
-  "timestamp": "2025-08-06T15:01:02.053120"
+  "timestamp": "2025-08-06T19:55:59.338941"
 }
