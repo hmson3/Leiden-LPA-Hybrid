@@ -4,7 +4,7 @@ import csv
 import networkx as nx
 import sys
 import random
-sys.path.append("../src")
+sys.path.append("../../src")
 from leiden_lpa import leiden_lpa_hybrid
 from evaluation import compute_modularity, compute_nmi
 
@@ -37,10 +37,10 @@ def load_graph_and_labels(dataset_folder):
 
     return G, gt
 
-def run_experiment(dataset_base="../data/data/processed", 
+def run_experiment(dataset_base="../../data/data/processed", 
                    datasets=None,  # 새로 추가: 특정 데이터셋 리스트
-                   repeat=1, 
-                   output_csv=f"results/results_{ALGORITHM_VERSION}.csv"):
+                   repeat=10, 
+                   output_csv=f"./results/results_{ALGORITHM_VERSION}.csv"):
     """
     실험 실행 함수
     
@@ -102,9 +102,9 @@ def run_experiment(dataset_base="../data/data/processed",
                     "Graph": dataset_name,
                     "Repeat": i,
                     "Algorithm": ALGORITHM_VERSION,
-                    "Time (s)": round(hybrid_time, 4),
-                    "Modularity": round(hybrid_mod, 4),
-                    "NMI": round(hybrid_nmi, 4)
+                    "Time (s)": round(hybrid_time, 7),
+                    "Modularity": round(hybrid_mod, 7),
+                    "NMI": round(hybrid_nmi, 7)
                 })
 
                 # 기존 Leiden 알고리즘 실행 (비교용)
@@ -118,9 +118,9 @@ def run_experiment(dataset_base="../data/data/processed",
                     "Graph": dataset_name,
                     "Repeat": i,
                     "Algorithm": "Leiden",
-                    "Time (s)": round(leiden_time, 4),
-                    "Modularity": round(leiden_mod, 4),
-                    "NMI": round(leiden_nmi, 4)
+                    "Time (s)": round(leiden_time, 7),
+                    "Modularity": round(leiden_mod, 7),
+                    "NMI": round(leiden_nmi, 7)
                 })
 
                 print(f"       Repeat {i}: Hybrid({hybrid_time:.4f}s, {hybrid_mod:.4f}, {hybrid_nmi:.4f}) vs Leiden({leiden_time:.4f}s, {leiden_mod:.4f}, {leiden_nmi:.4f})")
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     
     # 4. 사용자가 직접 입력
     print("Available datasets:")
-    dataset_base = "../data/data/processed"  # 기본 데이터셋 폴더 경로
+    dataset_base = "../../data/data/processed"  # 기본 데이터셋 폴더 경로
     if os.path.exists(dataset_base):
         available = [d for d in os.listdir(dataset_base) if os.path.isdir(os.path.join(dataset_base, d))]
         for i, dataset in enumerate(available, 1):

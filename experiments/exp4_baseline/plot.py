@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os, re
 
 # ── 데이터 로드 & 정제 ──────────────────────────────────
-df = pd.read_csv("results/summary_Leiden-LPA.csv")
+df = pd.read_csv("results/summary_Leiden-LPA_Hybrid.csv")
 
 def extract_num(v):
     m = re.match(r"([0-9.]+)", v) if isinstance(v, str) else None
