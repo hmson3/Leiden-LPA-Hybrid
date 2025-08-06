@@ -5,57 +5,57 @@
 ------------------------------
                    ami  modularity  runtime  accuracy  num_communities
 algorithm                                                             
-Louvain         0.4269      0.6148   0.2251    0.5055          18.0000
-Optimal_Hybrid  0.4019      0.5161   0.0725    0.5662          24.9429
-Pure_LPA        0.4153      0.5168   0.0338    0.4856         237.3529
-Pure_Leiden     0.4442      0.6219   0.0881    0.5041          18.8000
+Louvain         0.4269      0.6148   0.2643    0.5055          18.0000
+Optimal_Hybrid  0.4067      0.5663   0.0920    0.5195          17.9143
+Pure_LPA        0.4153      0.5168   0.0353    0.4856         237.3529
+Pure_Leiden     0.4442      0.6219   0.1067    0.5041          18.8000
 
 2. 데이터셋별 성능:
 ------------------------------
                             ami  modularity  runtime
 dataset  algorithm                                  
-citeseer Louvain         0.3165      0.8516   0.0944
-         Optimal_Hybrid  0.1784      0.7484   0.0270
-         Pure_LPA        0.2799      0.7610   0.0122
-         Pure_Leiden     0.3196      0.8559   0.0328
-cora     Louvain         0.4509      0.8036   0.1172
-         Optimal_Hybrid  0.3002      0.7137   0.0329
-         Pure_LPA        0.3765      0.7209   0.0151
-         Pure_Leiden     0.4571      0.8111   0.0447
-dolphin  Louvain         0.5047      0.5213   0.0017
-         Optimal_Hybrid  0.7669      0.4526   0.0015
-         Pure_LPA        0.7411      0.4312   0.0003
+citeseer Louvain         0.3165      0.8516   0.0960
+         Optimal_Hybrid  0.1795      0.7587   0.0471
+         Pure_LPA        0.2799      0.7610   0.0119
+         Pure_Leiden     0.3196      0.8559   0.0341
+cora     Louvain         0.4509      0.8036   0.1250
+         Optimal_Hybrid  0.2518      0.7058   0.0425
+         Pure_LPA        0.3765      0.7209   0.0167
+         Pure_Leiden     0.4571      0.8111   0.0467
+dolphin  Louvain         0.5047      0.5213   0.0018
+         Optimal_Hybrid  0.6374      0.5128   0.0017
+         Pure_LPA        0.7411      0.4312   0.0004
          Pure_Leiden     0.5415      0.5259   0.0013
-football Louvain         0.8298      0.6034   0.0036
-         Optimal_Hybrid  0.6392      0.5299   0.0024
+football Louvain         0.8298      0.6034   0.0043
+         Optimal_Hybrid  0.6893      0.5454   0.0030
          Pure_LPA        0.6620      0.5075   0.0006
-         Pure_Leiden     0.8600      0.6046   0.0023
-karate   Louvain         0.4686      0.4115   0.0094
-         Optimal_Hybrid  0.6699      0.3718   0.0013
-         Pure_LPA        0.4981      0.3080   0.0001
-         Pure_Leiden     0.5461      0.4196   0.0007
-mexican  Louvain         0.2185      0.3418   0.0011
-         Optimal_Hybrid  0.1931      0.2205   0.0011
+         Pure_Leiden     0.8600      0.6046   0.0025
+karate   Louvain         0.4686      0.4115   0.0021
+         Optimal_Hybrid  0.5705      0.3807   0.0020
+         Pure_LPA        0.4981      0.3080   0.0002
+         Pure_Leiden     0.5461      0.4196   0.0008
+mexican  Louvain         0.2185      0.3418   0.0013
+         Optimal_Hybrid  0.3018      0.2848   0.0015
          Pure_LPA        0.1312      0.1936   0.0002
-         Pure_Leiden     0.1841      0.3534   0.0009
-pubmed   Louvain         0.1993      0.7702   1.3484
-         Optimal_Hybrid  0.0657      0.5760   0.4415
-         Pure_LPA        0.1617      0.6309   0.2011
-         Pure_Leiden     0.2013      0.7827   0.5340
+         Pure_Leiden     0.1841      0.3534   0.0010
+pubmed   Louvain         0.1993      0.7702   1.6200
+         Optimal_Hybrid  0.2169      0.7761   0.5461
+         Pure_LPA        0.1617      0.6309   0.2100
+         Pure_Leiden     0.2013      0.7827   0.6603
 
 3. Optimal_Hybrid vs Pure_Leiden 비교:
 ------------------------------
-karate: AMI 유지율 1.227, 속도 향상 0.5x
-cora: AMI 유지율 0.657, 속도 향상 1.4x
-citeseer: AMI 유지율 0.558, 속도 향상 1.2x
-pubmed: AMI 유지율 0.326, 속도 향상 1.2x
-dolphin: AMI 유지율 1.416, 속도 향상 0.9x
-football: AMI 유지율 0.743, 속도 향상 1.0x
-mexican: AMI 유지율 1.049, 속도 향상 0.8x
+karate: AMI 유지율 1.045, 속도 향상 0.4x
+cora: AMI 유지율 0.551, 속도 향상 1.1x
+citeseer: AMI 유지율 0.562, 속도 향상 0.7x
+pubmed: AMI 유지율 1.078, 속도 향상 1.2x
+dolphin: AMI 유지율 1.177, 속도 향상 0.8x
+football: AMI 유지율 0.802, 속도 향상 0.8x
+mexican: AMI 유지율 1.640, 속도 향상 0.6x
 
 4. 주요 발견사항:
 ------------------------------
-- Optimal_Hybrid: 평균 AMI 85.4% 유지, 1.0x 속도 향상
+- Optimal_Hybrid: 평균 AMI 97.9% 유지, 0.8x 속도 향상
 - AMI 순위: Pure_Leiden > Louvain > Pure_LPA > Optimal_Hybrid
 - 속도 순위: Pure_LPA > Optimal_Hybrid > Pure_Leiden > Louvain
 - ⚠️ 목표 미달성: 파라미터 조정 필요

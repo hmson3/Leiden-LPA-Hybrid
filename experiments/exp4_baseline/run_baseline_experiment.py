@@ -43,7 +43,8 @@ class BaselineExperiment:
         self.exp_dir = self.project_root / 'experiments' / 'exp4_baseline'
         
         # 실험 설정
-        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed', 'dolphin', 'football', 'polblog', 'mexican']
+        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed', 'dolphin', 'football', 'polblog', 'mexican',
+                        'com-amazon', 'com-youtube', 'com-dblp']
         self.repeat_count = 5
         
         # Core 4개 알고리즘만 사용
@@ -135,7 +136,7 @@ class BaselineExperiment:
     def _run_optimal_hybrid(self, G: nx.Graph, seed: int) -> Dict[str, int]:
         """Optimal Hybrid 실행 (실험 1,2,3 결과 기반)"""
         alg = LeidenLPAHybrid(
-            core_ratio=0.3,  # 실험 1 결과
+            core_ratio=0.4,  # 실험 1 결과
             centrality_method='pagerank',  # 실험 2 결과
             anchor_strategy='dynamic_iterative',  # 실험 3 결과 (Fixed_Iterative)
             seed=seed
@@ -222,7 +223,8 @@ class BaselineExperiment:
                 'nmi': safe_get(evaluation['ground_truth_metrics'], 'nmi'),
                 'ami': safe_get(evaluation['ground_truth_metrics'], 'ami'),
                 'ari': safe_get(evaluation['ground_truth_metrics'], 'ari'),
-                'accuracy': safe_get(evaluation['ground_truth_metrics'], 'accuracy')
+                'accuracy': safe_get(evaluation['ground_truth_metrics'], 'accuracy'),
+                'f1_score': safe_get(evaluation['ground_truth_metrics'], 'f1_score')
             }
             
             # 하이브리드 알고리즘인 경우 추가 통계

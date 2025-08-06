@@ -6,3 +6,5 @@ cdlib
 wget
 psutil
 python-louvain 
+cdlib
+cudf-cu12

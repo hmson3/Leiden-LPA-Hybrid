@@ -16,6 +16,14 @@ from typing import Dict, List, Tuple, Any
 import warnings
 warnings.filterwarnings('ignore')
 
+try:
+    from cdlib.evaluation import overlapping_normalized_mutual_information_LFK
+    from cdlib import NodeClustering
+    OVERLAPPING_NMI_AVAILABLE = True
+except ImportError:
+    OVERLAPPING_NMI_AVAILABLE = False
+    warnings.warn("cdlib not available. Overlapping NMI will be skipped.")
+
 # 프로젝트 루트를 Python path에 추가
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
@@ -35,7 +43,8 @@ class CoreRatioExperiment:
         
         # 실험 설정
         self.core_ratios = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed', 'dolphin', 'football', 'polblog', 'mexican', 'com-amazon', 'com-youtube', 'com-lj', 'com-dblp']
+        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed', 'dolphin', 'football', 'polblog', 'mexican',
+                        'com-amazon', 'com-youtube', 'com-dblp']
         self.centrality_method = 'pagerank'  # 실험2에서 최적으로 확인된 지표
         self.anchor_fixed = True
         self.repeat_runs = 5  # 통계적 신뢰성을 위한 반복 실험
@@ -126,7 +135,7 @@ class CoreRatioExperiment:
             alg = LeidenLPAHybrid(
                 core_ratio=core_ratio,
                 centrality_method=self.centrality_method,
-                anchor_strategy='fixed_iterative',
+                anchor_strategy='dynamic_iterative',
                 seed=42 + run_id  # 재현 가능한 시드
             )
             pred_labels = alg.fit_predict(G)
@@ -187,6 +196,8 @@ class CoreRatioExperiment:
                 'ami': evaluation['ground_truth_metrics']['ami'],  # 주요 지표
                 'ari': evaluation['ground_truth_metrics']['ari'],
                 'accuracy': evaluation['ground_truth_metrics']['accuracy'],
+                'f1_score': evaluation['ground_truth_metrics'].get('f1_score', -1.0),  # ✅ 추가
+    
                 
                 # 알고리즘 분석 정보
                 'core_nodes_count': stats.get('core_nodes_count', 0),
