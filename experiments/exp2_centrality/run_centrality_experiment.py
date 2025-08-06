@@ -33,7 +33,7 @@ class CentralityExperiment:
         self.exp_dir = self.project_root / 'experiments' / 'exp2_centrality'
         
         # 실험 설정
-        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed']
+        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed', 'dolphin', 'football', 'polblog', 'mexican']
         self.centrality_methods = {
             'pagerank': 'PageRank (기본)',
             'degree': 'Degree Centrality', 

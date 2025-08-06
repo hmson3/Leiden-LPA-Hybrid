@@ -35,7 +35,7 @@ class AnchorStrategyExperiment:
         self.exp_dir = self.project_root / 'experiments' / 'exp3_anchor_fixing'
         
         # 실험 설정
-        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed']
+        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed', 'dolphin', 'football', 'polblog', 'mexican', 'com-amazon', 'com-youtube', 'com-lj', 'com-dplp']
         self.core_ratios = [0.4, 0.5, 0.6]  # 실험1 최적 범위
         self.anchor_strategies = {
             'Fixed_Single': 'fixed_single',       # 고정 + 1회

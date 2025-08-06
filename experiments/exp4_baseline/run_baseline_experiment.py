@@ -43,7 +43,7 @@ class BaselineExperiment:
         self.exp_dir = self.project_root / 'experiments' / 'exp4_baseline'
         
         # 실험 설정
-        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed']
+        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed', 'dolphin', 'football', 'polblog', 'mexican']
         self.repeat_count = 5
         
         # Core 4개 알고리즘만 사용
@@ -137,7 +137,7 @@ class BaselineExperiment:
         alg = LeidenLPAHybrid(
             core_ratio=0.3,  # 실험 1 결과
             centrality_method='pagerank',  # 실험 2 결과
-            anchor_strategy='fixed_iterative',  # 실험 3 결과 (Fixed_Iterative)
+            anchor_strategy='dynamic_iterative',  # 실험 3 결과 (Fixed_Iterative)
             seed=seed
         )
         return alg.fit_predict(G)

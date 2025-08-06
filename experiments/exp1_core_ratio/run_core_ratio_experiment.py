@@ -35,7 +35,7 @@ class CoreRatioExperiment:
         
         # 실험 설정
         self.core_ratios = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed']
+        self.datasets = ['karate', 'cora', 'citeseer', 'pubmed', 'dolphin', 'football', 'polblog', 'mexican', 'com-amazon', 'com-youtube', 'com-lj', 'com-dblp']
         self.centrality_method = 'pagerank'  # 실험2에서 최적으로 확인된 지표
         self.anchor_fixed = True
         self.repeat_runs = 5  # 통계적 신뢰성을 위한 반복 실험

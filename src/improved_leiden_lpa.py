@@ -1,5 +1,5 @@
 """
-개선된 Leiden-LPA 하이브리드 커뮤니티 탐지 알고리즘 v2 - Counter 최적화 버전
+개선된 Leiden-LPA 하이브리드 커뮤니티 탐지 알고리즘 
 - 3가지 앵커 전략 지원: Fixed_Single, Fixed_Iterative, Dynamic_Iterative
 - Counter 제거로 성능 최적화
 """
@@ -152,11 +152,15 @@ class LeidenLPAHybrid:
         return labels
     
     def _run_pure_leiden(self, G_nx: nx.Graph) -> Dict[str, int]:
-        """순수 Leiden 실행"""
+        """순수 Leiden 실행 - 최적화된 igraph 변환"""
         start_time = time.time()
         
-        # NetworkX를 igraph로 변환
-        G_ig = ig.Graph.TupleList(G_nx.edges(), directed=False)
+        # 🔥 최적화: 직접 igraph 생성 (TupleList 제거)
+        nodes_list = list(G_nx.nodes())
+        node_to_idx = {node: i for i, node in enumerate(nodes_list)}
+        edges_idx = [(node_to_idx[u], node_to_idx[v]) for u, v in G_nx.edges()]
+        
+        G_ig = ig.Graph(edges_idx, directed=False)
         
         # Leiden 실행
         if self.seed is not None:
@@ -164,8 +168,10 @@ class LeidenLPAHybrid:
         else:
             partition = find_partition(G_ig, ModularityVertexPartition)
         
-        # 결과 변환
-        labels = {v["name"]: partition.membership[i] for i, v in enumerate(G_ig.vs)}
+        # 🔥 최적화: 직접 매핑 (enumerate 제거)
+        labels = {}
+        for i in range(len(nodes_list)):
+            labels[nodes_list[i]] = partition.membership[i]
         
         self.stats['leiden_time'] = time.time() - start_time
         self.stats['core_nodes_count'] = len(G_nx.nodes())
@@ -195,30 +201,49 @@ class LeidenLPAHybrid:
         else:
             G_core = G_nx.subgraph(core_nodes).copy()
             
-            if len(G_core.edges()) == 0:
-                # 엣지가 없으면 각 노드를 별도 커뮤니티로
+            # 🔥 최적화: 직접 igraph 생성 및 빈 그래프 체크
+            core_nodes_list = list(core_nodes)
+            node_to_idx = {node: i for i, node in enumerate(core_nodes_list)}
+            edges_idx = [(node_to_idx[u], node_to_idx[v]) for u, v in G_core.edges()]
+            
+            if not edges_idx:  # 엣지가 없으면 각 노드를 별도 커뮤니티로
                 core_labels = {node: i for i, node in enumerate(core_nodes)}
             else:
-                # igraph 변환 및 Leiden 실행
-                G_core_ig = ig.Graph.TupleList(G_core.edges(), directed=False)
+                # igraph 생성 및 Leiden 실행
+                G_core_ig = ig.Graph(edges_idx, directed=False)
                 
                 if self.seed is not None:
                     partition = find_partition(G_core_ig, ModularityVertexPartition, seed=self.seed)
                 else:
                     partition = find_partition(G_core_ig, ModularityVertexPartition)
                 
-                core_labels = {v["name"]: partition.membership[i] 
-                             for i, v in enumerate(G_core_ig.vs)}
+                # 🔥 수정: igraph 실제 노드 수 기준으로 매핑
+                core_labels = {}
+                # 연결된 노드들만 매핑 (igraph는 사용된 노드만 포함)
+                used_nodes = set()
+                for u, v in edges_idx:
+                    used_nodes.add(u)
+                    used_nodes.add(v)
+                
+                # 실제 사용된 노드 인덱스를 정렬하여 매핑
+                used_indices = sorted(used_nodes)
+                for igraph_idx, orig_idx in enumerate(used_indices):
+                    original_node = core_nodes_list[orig_idx]
+                    core_labels[original_node] = partition.membership[igraph_idx]
+                
+                # 연결되지 않은 핵심 노드들은 별도 커뮤니티로
+                max_community = max(core_labels.values()) if core_labels else -1
+                for node in core_nodes:
+                    if node not in core_labels:
+                        max_community += 1
+                        core_labels[node] = max_community
         
         self.stats['leiden_time'] = time.time() - leiden_start
         
-        # 3. 전체 라벨 초기화
-        labels = {}
-        for node in G_nx.nodes():
-            if node in core_labels:
-                labels[node] = core_labels[node]
-            else:
-                labels[node] = None  # 아직 할당되지 않음
+        # 3. 전체 라벨 초기화 - 최적화
+        labels = dict(core_labels)  # 코어 라벨 복사
+        for node in periphery_nodes:
+            labels[node] = None  # 아직 할당되지 않음
         
         # 4. 앵커 전략에 따른 라벨 전파
         lpa_start = time.time()

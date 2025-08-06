@@ -8,26 +8,39 @@ karate:
   Modularity 최적: 1.0 (점수: 0.420)
 
 cora:
-  AMI 최적: 0.6 (점수: 0.472)
+  AMI 최적: 0.8 (점수: 0.471)
   Modularity 최적: 0.9 (점수: 0.812)
 
 citeseer:
-  AMI 최적: 0.6 (점수: 0.330)
+  AMI 최적: 0.7 (점수: 0.328)
   Modularity 최적: 1.0 (점수: 0.856)
 
 pubmed:
-  AMI 최적: 0.5 (점수: 0.216)
-  Modularity 최적: 0.9 (점수: 0.783)
+  AMI 최적: 0.4 (점수: 0.216)
+  Modularity 최적: 0.8 (점수: 0.783)
+
+dolphin:
+  AMI 최적: 0.2 (점수: 0.767)
+  Modularity 최적: 1.0 (점수: 0.526)
+
+football:
+  AMI 최적: 1.0 (점수: 0.860)
+  Modularity 최적: 1.0 (점수: 0.605)
+
+mexican:
+  AMI 최적: 0.3 (점수: 0.232)
+  Modularity 최적: 0.9 (점수: 0.358)
 
 2. 전체 평균 최적 Core Ratio:
 ------------------------------
-AMI 기준: 0.2 (점수: 0.407)
-Modularity 기준: 1.0 (점수: 0.718)
+AMI 기준: 1.0 (점수: 0.444)
+Modularity 기준: 1.0 (점수: 0.622)
 
 3. 주요 발견사항:
 ------------------------------
-- 평균 최적 AMI Core Ratio: 0.47
-- 평균 최적 Modularity Core Ratio: 0.95
-- 1개 데이터셋에서 낮은 Core Ratio(≤0.2) 선호
+- 평균 최적 AMI Core Ratio: 0.51
+- 평균 최적 Modularity Core Ratio: 0.94
+- 2개 데이터셋에서 낮은 Core Ratio(≤0.2) 선호
+- 2개 데이터셋에서 높은 Core Ratio(≥0.8) 선호
 - 데이터셋 크기별 최적 전략 확인 필요
 - 품질 vs 속도 트레이드오프 고려
