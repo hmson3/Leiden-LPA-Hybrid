@@ -151,11 +151,18 @@ def leiden_lpa_hybrid(G_nx,
         return {v["name"]: part.membership[i] for i, v in enumerate(G_ig.vs)}
 
     # 하이브리드 모드 (0.0 < core_ratio < 1.0)
-    
+    """
     # 1. 중심성에 따라 핵심 노드 선별
     centrality_scores = compute_centrality(G_nx, centrality_method)
     V_core = get_top_nodes(centrality_scores, core_ratio)
     V_periphery = [node for node in G_nx.nodes() if node not in V_core]
+    """
+
+    pagerank = nx.pagerank(G_nx, alpha=0.85)
+    sorted_nodes = sorted(pagerank, key=pagerank.get, reverse=True)
+    num_core = int(len(sorted_nodes) * core_ratio)
+    V_core = sorted_nodes[:num_core]
+    V_periphery = sorted_nodes[num_core:]
 
     # 2. 핵심 노드에 Leiden 적용
     if len(V_core) == 0:

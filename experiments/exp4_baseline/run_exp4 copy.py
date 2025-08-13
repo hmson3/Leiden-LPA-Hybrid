@@ -5,7 +5,7 @@ import networkx as nx
 import sys
 import random
 sys.path.append("../../src")
-from exp4_leiden_lpa import leiden_lpa_hybrid
+from leiden_lpa import leiden_lpa_hybrid
 from evaluation import compute_modularity, compute_nmi, compute_f1_score, compute_ari
 from baseline import run_leiden, run_louvain, run_pure_lpa
 
@@ -13,8 +13,8 @@ from baseline import run_leiden, run_louvain, run_pure_lpa
 ALGORITHM_VERSION = "exp2_Baseline"
 
 def load_graph_and_labels(dataset_folder):
-    graph_path = os.path.join(dataset_folder, "network.dat")
-    label_path = os.path.join(dataset_folder, "community.dat")
+    graph_path = os.path.join(dataset_folder, "graph.edgelist")
+    label_path = os.path.join(dataset_folder, "labels.txt")
 
     G = nx.read_edgelist(graph_path, nodetype=str)
     if not nx.is_connected(G):
@@ -28,11 +28,11 @@ def load_graph_and_labels(dataset_folder):
 
     return G, gt
 
-def run_experiment(dataset_base="../../data/data/lfr", 
+def run_experiment(dataset_base="../../data/data/processed", 
                    datasets=None,
                    algorithms=None,  # 새로 추가: 실행할 알고리즘 선택
                    repeat=10, 
-                   output_csv=f"./results/results_{ALGORITHM_VERSION}.csv"):
+                   output_csv=f"./results/comresults_{ALGORITHM_VERSION}.csv"):
     """
     실험 실행 함수
     
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     
     # 1. 데이터셋 선택
     print("📊 Available datasets:")
-    dataset_base = "../../data/data/lfr"
+    dataset_base = "../../data/data/processed"
     if os.path.exists(dataset_base):
         available = [d for d in os.listdir(dataset_base) if os.path.isdir(os.path.join(dataset_base, d))]
         for i, dataset in enumerate(available, 1):
@@ -185,7 +185,7 @@ if __name__ == "__main__":
         user_input = input("Dataset selection: ").strip()
         
         if user_input.lower() == 'all' or user_input == '':
-            selected_datasets = ["100", "500", "1000", "5000", "10000", "50000", "100000"]
+            selected_datasets = [ "com-amazon", "com-youtube"]
         else:
             selected_datasets = [name.strip() for name in user_input.split(',')]
     else:

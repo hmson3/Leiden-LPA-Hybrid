@@ -10,11 +10,11 @@ from evaluation import compute_modularity, compute_nmi, compute_f1_score, comput
 from baseline import run_leiden, run_louvain, run_pure_lpa
 
 # 버전 이름을 명확히 설정
-EXPERIMENT_NAME = "Core_Ratio_Analysis"
+EXPERIMENT_NAME = "Scalability"
 
 def load_graph_and_labels(dataset_folder):
-    graph_path = os.path.join(dataset_folder, "graph.edgelist")
-    label_path = os.path.join(dataset_folder, "labels.txt")
+    graph_path = os.path.join(dataset_folder, "network.dat")
+    label_path = os.path.join(dataset_folder, "community.dat")
 
     G = nx.read_edgelist(graph_path, nodetype=str)
     if not nx.is_connected(G):
@@ -28,12 +28,12 @@ def load_graph_and_labels(dataset_folder):
 
     return G, gt
 
-def run_core_ratio_experiment(dataset_base="../../data/data/processed", 
+def run_core_ratio_experiment(dataset_base="../../data/data/lfr", 
                               datasets=None,
                               core_ratios=None,  # 새로 추가: core ratio 리스트
                               centrality_methods=None,  # 새로 추가: 중심성 방법들
                               repeat=5, 
-                              output_csv=f"./results/exp1_{EXPERIMENT_NAME}.csv"):
+                              output_csv=f"./results/exp2_{EXPERIMENT_NAME}.csv"):
     """
     Core Ratio 실험 실행 함수
     
@@ -175,7 +175,7 @@ def run_centrality_comparison_experiment(dataset_base="../../data/data/processed
                                        core_ratio=0.4,  # 고정된 core ratio
                                        centrality_methods=None,  # 비교할 중심성 방법들
                                        repeat=5, 
-                                       output_csv=f"./results/exp1_centrality_comparison.csv"):
+                                       output_csv=f"./results/exp2_centrality_comparison.csv"):
     """
     중심성 방법 비교 실험
     """
@@ -198,7 +198,7 @@ def run_both_experiment(dataset_base="../../data/data/processed",
                                        core_ratios=[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],  # 고정된 core ratio
                                        centrality_methods=None,  # 비교할 중심성 방법들
                                        repeat=5, 
-                                       output_csv=f"./results/exp1_centrality_comparison.csv"):
+                                       output_csv=f"./results/exp2_centrality_comparison.csv"):
     """
     중심성 방법 비교 실험
     """
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     
     # 1. 데이터셋 선택
     print("📊 Available datasets:")
-    dataset_base = "../../data/data/processed"
+    dataset_base = "../../data/data/lfr"
     if os.path.exists(dataset_base):
         available = [d for d in os.listdir(dataset_base) if os.path.isdir(os.path.join(dataset_base, d))]
         for i, dataset in enumerate(available, 1):
@@ -239,7 +239,7 @@ if __name__ == "__main__":
             selected_datasets = available
         elif user_input == '':
             #selected_datasets = ["karate", "cora", "citeseer", "dolphin", "football", "mexican"] 
-            selected_datasets = ["pubmed"]
+            selected_datasets = ["100", "500", "1000", "5000", "10000", "50000", "100000"]
         else:
             selected_datasets = [name.strip() for name in user_input.split(',')]
     else:
@@ -315,7 +315,7 @@ if __name__ == "__main__":
             core_ratios=core_ratios,
             centrality_methods=centrality_methods,
             repeat=repeat,
-            output_csv="./results/exp1_both_analysis.csv"
+            output_csv="./results/exp2_both_analysis.csv"
         )
     
     print("\n✅ All experiments completed!")
