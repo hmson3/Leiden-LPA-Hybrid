@@ -87,7 +87,7 @@ def run_experiment(dataset_base="../../data/data/lfr",
     print(f"[INFO] Running experiments on datasets: {datasets_to_run}")
     print(f"[INFO] Running algorithms: {[algorithm_names[alg] for alg in algorithms]}")
     
-    total_experiments = len(datasets_to_run) * repeat
+    total_experiments = len(datasets_to_run) * repeat * len(algorithms)
     print(f"[INFO] Total experiments: {total_experiments}")
     append = os.path.exists(output_csv)
     with open(output_csv, 'a' if append else 'w', newline='') as f:
@@ -105,12 +105,13 @@ def run_experiment(dataset_base="../../data/data/lfr",
             print(f"       Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
 
             for i in range(repeat):
-                experiment_count += 1
+                
                 seed = i + 42
                 results_for_this_run = []
 
                 # 각 알고리즘별 실행
                 for alg_key in algorithms:
+                    experiment_count += 1
                     alg_func = algorithm_functions[alg_key]
                     alg_name = algorithm_names[alg_key]
                     
@@ -185,7 +186,7 @@ if __name__ == "__main__":
         user_input = input("Dataset selection: ").strip()
         
         if user_input.lower() == 'all' or user_input == '':
-            selected_datasets = ["100", "500", "1000", "5000", "10000", "50000", "100000"]
+            selected_datasets = ["10000", "20000", "40000", "80000","160000","320000","640000"]
         else:
             selected_datasets = [name.strip() for name in user_input.split(',')]
     else:
@@ -212,7 +213,7 @@ if __name__ == "__main__":
     alg_input = input("Algorithm selection: ").strip()
     
     if alg_input.lower() == 'all' or alg_input == '':
-        selected_algorithms = [alg_key for alg_key, _ in available_algorithms.values()]
+        selected_algorithms = ["hybrid", "leiden"]
     else:
         selected_numbers = [num.strip() for num in alg_input.split(',')]
         selected_algorithms = []
@@ -228,5 +229,5 @@ if __name__ == "__main__":
     run_experiment(
         datasets=selected_datasets,
         algorithms=selected_algorithms,
-        repeat=1
+        repeat=5
     )

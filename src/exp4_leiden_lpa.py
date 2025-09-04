@@ -4,7 +4,7 @@ from leidenalg import find_partition, ModularityVertexPartition
 import igraph as ig
 import random
 
-def leiden_lpa_hybrid(G_nx, core_ratio=0.4, seed=None, max_iter=10):
+def leiden_lpa_hybrid(G_nx, core_ratio=0.3, seed=None, max_iter=10):
 
     # 코어 비율 0.0 LPA만 수행행
     if core_ratio <= 0.0:
