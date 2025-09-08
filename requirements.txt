@@ -6,3 +6,4 @@ cdlib
 wget
 psutil
 python-louvain 
+leidenalg
