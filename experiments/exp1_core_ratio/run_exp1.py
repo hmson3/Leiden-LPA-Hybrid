@@ -239,7 +239,7 @@ if __name__ == "__main__":
             selected_datasets = available
         elif user_input == '':
             #selected_datasets = ["karate", "cora", "citeseer", "dolphin", "football", "mexican"] 
-            selected_datasets = ["pubmed"]
+            selected_datasets = ["polblogs"]
         else:
             selected_datasets = [name.strip() for name in user_input.split(',')]
     else:

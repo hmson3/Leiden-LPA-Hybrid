@@ -10,7 +10,7 @@ from evaluation import compute_modularity, compute_nmi, compute_f1_score, comput
 from baseline import run_leiden, run_louvain, run_pure_lpa
 
 # 버전 이름을 명확히 설정
-ALGORITHM_VERSION = "exp4_Scalability"
+ALGORITHM_VERSION = "exp3_robustness"
 
 def load_graph_and_labels(dataset_folder):
     graph_path = os.path.join(dataset_folder, "network.dat")
@@ -186,7 +186,7 @@ if __name__ == "__main__":
         user_input = input("Dataset selection: ").strip()
         
         if user_input.lower() == 'all' or user_input == '':
-            selected_datasets = ["10000", "20000", "40000", "80000","160000","320000","640000"]
+            selected_datasets = ["01", "03", "05", "07","09"]
         else:
             selected_datasets = [name.strip() for name in user_input.split(',')]
     else:
