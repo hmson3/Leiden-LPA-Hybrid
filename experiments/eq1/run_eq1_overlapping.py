@@ -5,7 +5,7 @@ import networkx as nx
 import sys
 import random
 sys.path.append("../../src")
-from exp4_leiden_lpa import leiden_lpa_hybrid
+from llama import llama
 from evaluation import compute_modularity, compute_nmi, compute_f1_score, compute_ari
 from baseline import run_leiden, run_louvain, run_pure_lpa
 
@@ -70,7 +70,7 @@ def run_experiment(dataset_base="../../data/data/processed",
     
     # 알고리즘별 함수 매핑
     algorithm_functions = {
-        "hybrid": lambda G, seed: leiden_lpa_hybrid(G, seed=seed),
+        "hybrid": lambda G, seed: llama(G, seed=seed),
         "leiden": run_leiden,
         "louvain": run_louvain,
         "lpa": run_pure_lpa

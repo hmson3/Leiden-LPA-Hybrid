@@ -5,7 +5,7 @@ import networkx as nx
 import sys
 import random
 sys.path.append("../../src")
-from leiden_lpa import leiden_lpa_hybrid
+from centrality_llama import llama
 from evaluation import compute_modularity, compute_nmi, compute_f1_score, compute_ari
 from baseline import run_leiden, run_louvain, run_pure_lpa
 
@@ -62,7 +62,7 @@ def run_core_ratio_experiment(dataset_base="../../data/data/processed",
     
     # 알고리즘별 함수 매핑 (core_ratio 파라미터 지원)
     def run_hybrid_with_ratio(G, seed, core_ratio, centrality_method):
-        return leiden_lpa_hybrid(G, core_ratio=core_ratio, seed=seed, 
+        return llama(G, core_ratio=core_ratio, seed=seed, 
                                 centrality_method=centrality_method)
     
     os.makedirs(os.path.dirname(output_csv), exist_ok=True)

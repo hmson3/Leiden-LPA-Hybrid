@@ -88,7 +88,7 @@ def get_top_nodes(centrality_scores, ratio):
     
     return top_nodes
 
-def leiden_lpa_hybrid(G_nx, 
+def llama(G_nx, 
                      core_ratio=0.3, 
                      centrality_method='pagerank', 
                      seed=None, 

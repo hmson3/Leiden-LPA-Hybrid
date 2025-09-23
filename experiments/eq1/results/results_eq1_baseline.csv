@@ -91,9 +91,9 @@ com-amazon,2,Pure_Leiden,99.6866636,0.9321221,,,,376,True
 com-amazon,2,Pure_LPA,8.7827106,0.7628812,,,,24072,True
 com-youtube,0,Leiden-LPA_Hybrid,210.402302,0.7132265,,,,8619,True
 com-youtube,0,Pure_Leiden,2654.2192304,0.7315477,,,,5403,True
-com-youtube,1,Pure_Leiden,3012.0294366,0.7315477,,,,5403,True
-com-youtube,1,Leiden-LPA_Hybrid,226.0716765,0.7123942,,,,9024,True
 com-youtube,0,Pure_LPA,31.7989938,0.5911022,,,,36635,True
+com-youtube,1,Leiden-LPA_Hybrid,226.0716765,0.7123942,,,,9024,True
+com-youtube,1,Pure_Leiden,3012.0294366,0.7315477,,,,5403,True
 com-youtube,1,Pure_LPA,32.6609724,0.5700746,,,,36048,True
 com-youtube,2,Leiden-LPA_Hybrid,236.7577522,0.7052972,,,,9695,True
 com-youtube,2,Pure_Leiden,3054.7556639,0.7315477,,,,5403,True
