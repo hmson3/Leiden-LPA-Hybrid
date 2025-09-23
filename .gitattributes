@@ -1,0 +1,4 @@
+data/data/lfr/320000/community.dat filter=lfs diff=lfs merge=lfs -text
+data/data/lfr/640000/community.dat filter=lfs diff=lfs merge=lfs -text
+data/data/lfr/640000/network.dat filter=lfs diff=lfs merge=lfs -text
+data/data/lfr/320000/network.dat filter=lfs diff=lfs merge=lfs -text
